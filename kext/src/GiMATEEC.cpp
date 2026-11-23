@@ -50,6 +50,7 @@ public:
                                     OSObject *target, void *reference) APPLE_KEXT_OVERRIDE;
 
     static IOReturn sSetChargeLimit(OSObject *target, void *ref, IOExternalMethodArguments *args);
+    static IOReturn sSetFanMode(OSObject *target, void *ref, IOExternalMethodArguments *args);
 };
 
 class GiMATEEC : public IOService
@@ -76,6 +77,7 @@ public:
                                    LIBKERN_RETURNS_RETAINED IOUserClient **handler) APPLE_KEXT_OVERRIDE;
 
     bool setChargeLimit(int pct);
+    bool setFanMode(int mode);
 };
 
 OSDefineMetaClassAndStructors(GiMATEEC, IOService)
@@ -134,6 +136,17 @@ void GiMATEEC::refresh()
     if (read8(0x2C) & 0x02) flags |= 1u << 3;
     if (read8(0x07) & 0x02) flags |= 1u << 4;
     setProperty("Flags", flags, 32);
+
+    /* FanMode: 0 normal, 1 silent, 2 gaming, 3 auto (from the EC bits) */
+    int fanMode = 0;
+    if (read8(0x0C) & 0x02) {
+        fanMode = 3;                       /* GFAN = auto */
+    } else if (read8(0x2C) & 0x02) {
+        fanMode = 2;                       /* FANB = gaming */
+    } else if (read8(0x2C) & 0x01) {
+        fanMode = 1;                       /* CRAF = silent */
+    }
+    setProperty("FanMode", (UInt32) fanMode, 32);
 }
 
 void GiMATEEC::timerFired()
@@ -161,6 +174,42 @@ bool GiMATEEC::setChargeLimit(int pct)
 
     IOLog("GiMATEEC: charge limit -> %d%% (BCPS=0x%02X BCPC=%u)\n",
           pct, read8(0x03) & 0x0F, (unsigned) read8(0x05));
+    refresh();
+    return true;
+}
+
+bool GiMATEEC::setFanMode(int mode)
+{
+    if (!ecMap) {
+        return false;
+    }
+
+    UInt8 tfan = read8(0x0B) & 0x7F;
+    UInt8 gfan = read8(0x0C) & 0xFD;
+    UInt8 ramp = read8(0x2C) & 0xFC;
+
+    switch (mode) {
+    case 1:                     /* silent */
+        write8(0x0B, tfan);
+        write8(0x2C, (UInt8) (ramp | 0x01));
+        write8(0x0C, gfan);
+        break;
+    case 2:                     /* gaming */
+        write8(0x0B, tfan);
+        write8(0x2C, (UInt8) (ramp | 0x02));
+        write8(0x0C, gfan);
+        break;
+    case 3:                     /* auto */
+        write8(0x2C, ramp);
+        write8(0x0B, tfan);
+        write8(0x0C, (UInt8) (gfan | 0x02));
+        break;
+    default:
+        return false;
+    }
+
+    IOLog("GiMATEEC: fan mode -> %d (0B=0x%02X 0C=0x%02X 2C=0x%02X)\n",
+          mode, read8(0x0B), read8(0x0C), read8(0x2C));
     refresh();
     return true;
 }
@@ -246,7 +295,7 @@ IOReturn GiMATEEC::newUserClient(task_t owningTask, void *securityID, UInt32 typ
 /* ------------------------------------------------------------------ */
 
 #define kMuxSelSetChargeLimit 0
-#define kMuxSelSetByte        1
+#define kMuxSelSetFanMode     1
 
 bool GiMATEECClient::initWithTask(task_t owningTask, void *securityID, UInt32 type)
 {
@@ -292,12 +341,26 @@ IOReturn GiMATEECClient::sSetChargeLimit(OSObject *target, void *ref,
     return ok ? kIOReturnSuccess : kIOReturnBadArgument;
 }
 
+IOReturn GiMATEECClient::sSetFanMode(OSObject *target, void *ref,
+                                     IOExternalMethodArguments *args)
+{
+    GiMATEECClient *self = (GiMATEECClient *) target;
+    if (!self || !self->owner || args->scalarInputCount < 1) {
+        return kIOReturnBadArgument;
+    }
+    int mode = (int) args->scalarInput[0];
+    bool ok = self->owner->setFanMode(mode);
+    IOLog("GiMATEEC: user client setFanMode(%d) -> %s\n", mode, ok ? "ok" : "rejected");
+    return ok ? kIOReturnSuccess : kIOReturnBadArgument;
+}
+
 IOReturn GiMATEECClient::externalMethod(uint32_t selector, IOExternalMethodArguments *args,
                                         IOExternalMethodDispatch *dispatch,
                                         OSObject *target, void *reference)
 {
-    static const IOExternalMethodDispatch methods[1] = {
+    static const IOExternalMethodDispatch methods[2] = {
         { (IOExternalMethodAction) &GiMATEECClient::sSetChargeLimit, 1, 0, 0, 0 },
+        { (IOExternalMethodAction) &GiMATEECClient::sSetFanMode,     1, 0, 0, 0 },
     };
 
     if (selector >= (sizeof(methods) / sizeof(methods[0]))) {

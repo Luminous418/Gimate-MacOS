@@ -46,7 +46,7 @@ GiMATEEC.kext     maps the EC window       ← only if read/write of the EC is n
 |---|---|---|
 | **1. MVP** | Menu-bar app: keyboard RGB, MUX status, EC sensors (`RPM1/RPM2`, `CTMP`) | ✅ working |
 | 2. Charge limit | 60 / 80 / 100 % (BCPC + BCPS bit 2) | ✅ register write verified |
-| 3. Fan profile | Auto / Silent / Performance (presets, not raw PWM) | pending (needs Windows RE) |
+| 3. Fan profile | Silent / Gaming / Auto (`CRAF`, `FANB`, `GFAN`) | ✅ implemented, pending on-hardware test |
 | 4. LEDs / extras | chassis LEDs, keyboard brightness | pending |
 | 5. Manual fan curve | — | **not planned: too risky** |
 
@@ -68,7 +68,8 @@ in GiMATE, dump again and diff. The byte that changes is the field.
 ```
 kext/      GiMATEEC.kext: read-only mapping of the EC window (0xFE0B0800)
 tools/     gmec (CLI), deployment scripts
-app/       GiMATE.app: SwiftUI menu-bar app (sensors, RGB, MUX state)
+app/       GiMATE.app: SwiftUI menu-bar app (sensors, fan mode, charge limit,
+           RGB via the bundled gigabyte-kbd script, MUX state)
 audit/     macOS hardware audit (scripts + raw output)
 research/  reverse-engineering notes (app IL, drivers zip, EC map)
 ```
@@ -86,6 +87,14 @@ research/  reverse-engineering notes (app IL, drivers zip, EC map)
   from the CLI and from the app.
 - End-to-end charging behaviour at 60 % (battery actually stopping there) still to be
   observed with a discharged battery.
+
+## Dependencies
+
+- **Keyboard RGB**: [gigabyte-kbd](https://github.com/Luminous418/Gigabyte-Gaming-A16-macOS-KB)
+  (MIT, bundled inside `GiMATE.app/Contents/Resources`). One implementation of the
+  LampArray protocol for both Linux and macOS.
+- **Reverse-engineering reference**: [gigabyte-laptop-wmi](https://github.com/tangalbert919/gigabyte-laptop-wmi)
+  (GPL-2.0). Used only as documentation for the WMI method IDs and EC fields; no code copied.
 
 ## License
 

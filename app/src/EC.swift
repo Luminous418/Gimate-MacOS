@@ -9,6 +9,7 @@ struct ECSnapshot {
     var flvl = 0, kbll = 0
     var ctmp = 0, ctml = 0
     var bcps = 0, bcpc = 0
+    var fanMode = 0
     var flags = 0
 }
 
@@ -31,6 +32,7 @@ enum EC {
         s.flvl = i("FLVL"); s.kbll = i("KBLL")
         s.ctmp = i("CTMP"); s.ctml = i("CTML")
         s.bcps = i("BCPS"); s.bcpc = i("BCPC")
+        s.fanMode = i("FanMode")
         s.flags = i("Flags")
         return s
     }
@@ -48,6 +50,20 @@ enum EC {
         var input = UInt64(pct)
         let kr = IOConnectCallScalarMethod(conn, 0, &input, 1, nil, nil)
         return kr == KERN_SUCCESS
+    }
+
+    /// Writes the fan mode through the kext user client (1 silent, 2 gaming, 3 auto).
+    static func setFanMode(_ mode: Int) -> Bool {
+        let svc = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("GiMATEEC"))
+        guard svc != 0 else { return false }
+        defer { IOObjectRelease(svc) }
+
+        var conn: io_connect_t = 0
+        guard IOServiceOpen(svc, mach_task_self_, 0, &conn) == KERN_SUCCESS else { return false }
+        defer { IOServiceClose(conn) }
+
+        var input = UInt64(mode)
+        return IOConnectCallScalarMethod(conn, 1, &input, 1, nil, nil) == KERN_SUCCESS
     }
 
     /// True when the internal panel is driven by the NVIDIA GPU (MUX = Discrete).

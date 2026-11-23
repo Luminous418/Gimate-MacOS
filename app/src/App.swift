@@ -11,19 +11,54 @@ struct GiMATEApp: App {
     }
 }
 
+/// Opens the shared NSColorPanel from an accessory (menu bar) app.
+final class ColorPanelBridge: NSObject {
+    static let shared = ColorPanelBridge()
+    private var handler: ((NSColor) -> Void)?
+
+    func show(from color: NSColor, handler: @escaping (NSColor) -> Void) {
+        self.handler = handler
+        let panel = NSColorPanel.shared
+        panel.showsAlpha = false
+        panel.isContinuous = true
+        panel.setTarget(self)
+        panel.setAction(#selector(changed(_:)))
+        panel.color = color
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
+    }
+
+    @objc private func changed(_ sender: NSColorPanel) {
+        handler?(sender.color)
+    }
+}
+
 struct ContentView: View {
     @State private var snap: ECSnapshot?
     @State private var discrete = false
-    @State private var lamp: LampArray?
-    @State private var hasLamp = false
+    @State private var hasLamp = Keyboard.available
+    @State private var kbdStatus = ""
     @State private var autonomous = false
-    @State private var color = Color(red: 0.0, green: 0.66, blue: 1.0)
+    @State private var brightness: Double = 1.0
+    @State private var lastColor: (UInt8, UInt8, UInt8) = (0, 170, 255)
     @State private var timer: Timer?
     @State private var chargeLimit = 80
+    @State private var fanMode = 3
+
+    private let presets: [(String, (UInt8, UInt8, UInt8))] = [
+        ("Blanco",  (255, 255, 255)),
+        ("Rojo",    (255, 0, 0)),
+        ("Naranja", (255, 120, 0)),
+        ("Amarillo",(255, 220, 0)),
+        ("Verde",   (0, 255, 60)),
+        ("Cian",    (0, 170, 255)),
+        ("Azul",    (0, 40, 255)),
+        ("Magenta", (200, 0, 255)),
+    ]
 
     private var tempText: String {
         guard let s = snap, s.mapped else { return "--" }
-        return String(format: "%d.%02d °C", s.ctmp, s.ctml)
+        return "\(s.ctmp) °C"
     }
 
     var body: some View {
@@ -43,13 +78,23 @@ struct ContentView: View {
                     row("CPU", tempText)
                     row("Fan 1", rpmFan(snap?.rpm1, snap?.fan1))
                     row("Fan 2", rpmFan(snap?.rpm2, snap?.fan2))
-                    row("Level", snap.map { "\($0.flvl)" } ?? "--")
                     if snap?.mapped != true {
                         Text(snap == nil ? "GiMATEEC.kext not loaded" : "EC not mapped")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            GroupBox("Fan") {
+                Picker("", selection: $fanMode) {
+                    Text("Silent").tag(1)
+                    Text("Gaming").tag(2)
+                    Text("Auto").tag(3)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .onChange(of: fanMode) { _, v in _ = EC.setFanMode(v) }
             }
 
             GroupBox("Battery") {
@@ -64,9 +109,7 @@ struct ContentView: View {
                     .labelsHidden()
                     .pickerStyle(.segmented)
                     .frame(width: 170)
-                    .onChange(of: chargeLimit) { _, v in
-                        _ = EC.setChargeLimit(v)
-                    }
+                    .onChange(of: chargeLimit) { _, v in _ = EC.setChargeLimit(v) }
                 }
                 .font(.callout)
             }
@@ -74,17 +117,56 @@ struct ContentView: View {
             GroupBox("Keyboard") {
                 VStack(alignment: .leading, spacing: 8) {
                     if hasLamp {
-                        ColorPicker("Colour", selection: $color, supportsOpacity: false)
-                        HStack {
-                            Button("Apply") { applyColor() }
-                            Button("Off") { lamp?.off() }
+                        HStack(spacing: 6) {
+                            ForEach(presets, id: \.0) { name, rgb in
+                                Circle()
+                                    .fill(Color(red: Double(rgb.0) / 255,
+                                                green: Double(rgb.1) / 255,
+                                                blue: Double(rgb.2) / 255))
+                                    .frame(width: 22, height: 22)
+                                    .overlay(Circle().stroke(Color.primary.opacity(0.25)))
+                                    .help(name)
+                                    .onTapGesture { apply(rgb) }
+                            }
                             Spacer()
-                            Toggle("Auto", isOn: $autonomous)
-                                .onChange(of: autonomous) { _, v in lamp?.setAutonomous(v) }
+                            Button {
+                                openColorPanel()
+                            } label: {
+                                Image(systemName: "eyedropper")
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Elegir otro color")
+                            Button {
+                                let r = Keyboard.off()
+                                kbdStatus = r.code == 0 ? "" : r.output
+                            } label: {
+                                Image(systemName: "power")
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Apagar")
                         }
-                        .controlSize(.small)
+
+                        HStack {
+                            Image(systemName: "sun.min")
+                            Slider(value: $brightness, in: 0...1) { editing in
+                                if !editing { apply(lastColor) }
+                            }
+                            Image(systemName: "sun.max")
+                        }
+                        .font(.caption)
+
+                        if !kbdStatus.isEmpty {
+                            Text(kbdStatus).font(.caption2).foregroundStyle(.red).lineLimit(2)
+                        }
+
+                        Toggle("Modo autónomo (Fn+Space)", isOn: $autonomous)
+                            .font(.caption)
+                            .onChange(of: autonomous) { _, v in
+                                let r = Keyboard.autonomous(v)
+                                kbdStatus = r.code == 0 ? "" : r.output
+                            }
                     } else {
-                        Text("LampArray not found")
+                        Text("gigabyte-kbd not found")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
@@ -100,7 +182,7 @@ struct ContentView: View {
             }
         }
         .padding(12)
-        .frame(width: 300)
+        .frame(width: 320)
         .onAppear(perform: start)
         .onDisappear { timer?.invalidate() }
     }
@@ -121,8 +203,7 @@ struct ContentView: View {
     }
 
     private func start() {
-        lamp = LampArray()
-        hasLamp = lamp != nil
+        hasLamp = Keyboard.available
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in refresh() }
     }
@@ -130,15 +211,29 @@ struct ContentView: View {
     private func refresh() {
         snap = EC.read()
         discrete = EC.panelOnDiscrete()
-        if let s = snap, s.mapped, chargeLimit != s.bcpc {
-            chargeLimit = s.bcpc
+        if let s = snap, s.mapped {
+            if chargeLimit != s.bcpc { chargeLimit = s.bcpc }
+            if s.fanMode != 0 && fanMode != s.fanMode { fanMode = s.fanMode }
         }
     }
 
-    private func applyColor() {
-        let ns = NSColor(color).usingColorSpace(.sRGB) ?? .cyan
-        lamp?.setColor(red: UInt8(ns.redComponent * 255),
-                       green: UInt8(ns.greenComponent * 255),
-                       blue: UInt8(ns.blueComponent * 255))
+    private func openColorPanel() {
+        let base = NSColor(srgbRed: CGFloat(lastColor.0) / 255,
+                           green: CGFloat(lastColor.1) / 255,
+                           blue: CGFloat(lastColor.2) / 255,
+                           alpha: 1)
+        ColorPanelBridge.shared.show(from: base) { ns in
+            let c = ns.usingColorSpace(.sRGB) ?? .cyan
+            apply((UInt8(max(0, min(255, c.redComponent * 255))),
+                   UInt8(max(0, min(255, c.greenComponent * 255))),
+                   UInt8(max(0, min(255, c.blueComponent * 255)))))
+        }
+    }
+
+    private func apply(_ rgb: (UInt8, UInt8, UInt8)) {
+        lastColor = rgb
+        let i = UInt8(max(0, min(255, brightness * 255)))
+        let r = Keyboard.setColor(rgb.0, rgb.1, rgb.2, intensity: i)
+        kbdStatus = r.code == 0 ? "" : r.output
     }
 }
