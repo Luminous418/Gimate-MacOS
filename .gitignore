@@ -5,3 +5,6 @@ tools/gmec
 research/gigabyte-laptop-wmi/
 .DS_Store
 audit/smc_probe
+tools/kbdcolor
+tools/kbdtest
+audit/smc_probe
