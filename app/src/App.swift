@@ -64,7 +64,7 @@ struct ContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("GIGABYTE A16").font(.headline)
+                Text("Gigabyte Gaming A16").font(.headline)
                 Spacer()
                 Text(discrete ? "Discrete" : "Hybrid")
                     .font(.caption.weight(.semibold))
