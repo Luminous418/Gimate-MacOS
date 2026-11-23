@@ -49,8 +49,7 @@ public:
                                     IOExternalMethodDispatch *dispatch,
                                     OSObject *target, void *reference) APPLE_KEXT_OVERRIDE;
 
-    static IOReturn sSetChargeLimit(OSObject *target, void *ref, IOExternalMethodArguments *args);
-    static IOReturn sSetFanMode(OSObject *target, void *ref, IOExternalMethodArguments *args);
+    static IOReturn sSet(OSObject *target, void *ref, IOExternalMethodArguments *args);
 };
 
 class GiMATEEC : public IOService
@@ -189,6 +188,11 @@ bool GiMATEEC::setFanMode(int mode)
     UInt8 ramp = read8(0x2C) & 0xFC;
 
     switch (mode) {
+    case 0:                     /* normal: no mode bit set */
+        write8(0x2C, ramp);
+        write8(0x0C, gfan);
+        write8(0x0B, tfan);
+        break;
     case 1:                     /* silent */
         write8(0x0B, tfan);
         write8(0x2C, (UInt8) (ramp | 0x01));
@@ -328,29 +332,28 @@ IOReturn GiMATEECClient::clientClose()
     return kIOReturnSuccess;
 }
 
-IOReturn GiMATEECClient::sSetChargeLimit(OSObject *target, void *ref,
-                                         IOExternalMethodArguments *args)
+IOReturn GiMATEECClient::sSet(OSObject *target, void *ref,
+                                IOExternalMethodArguments *args)
 {
     GiMATEECClient *self = (GiMATEECClient *) target;
-    if (!self || !self->owner || args->scalarInputCount < 1) {
+    if (!self || !self->owner || args->scalarInputCount < 2) {
         return kIOReturnBadArgument;
     }
-    int pct = (int) args->scalarInput[0];
-    bool ok = self->owner->setChargeLimit(pct);
-    IOLog("GiMATEEC: user client setChargeLimit(%d) -> %s\n", pct, ok ? "ok" : "rejected");
-    return ok ? kIOReturnSuccess : kIOReturnBadArgument;
-}
 
-IOReturn GiMATEECClient::sSetFanMode(OSObject *target, void *ref,
-                                     IOExternalMethodArguments *args)
-{
-    GiMATEECClient *self = (GiMATEECClient *) target;
-    if (!self || !self->owner || args->scalarInputCount < 1) {
-        return kIOReturnBadArgument;
+    int op    = (int) args->scalarInput[0];
+    int value = (int) args->scalarInput[1];
+
+    bool ok = false;
+    if (op == 0) {
+        ok = self->owner->setChargeLimit(value);
+    } else if (op == 1) {
+        ok = self->owner->setFanMode(value);
     }
-    int mode = (int) args->scalarInput[0];
-    bool ok = self->owner->setFanMode(mode);
-    IOLog("GiMATEEC: user client setFanMode(%d) -> %s\n", mode, ok ? "ok" : "rejected");
+
+    self->owner->setProperty("LastOp", (UInt32) op, 32);
+    self->owner->setProperty("LastValue", (UInt32) value, 32);
+    self->owner->setProperty("LastResult", (UInt32) (ok ? 1 : 0), 32);
+
     return ok ? kIOReturnSuccess : kIOReturnBadArgument;
 }
 
@@ -358,9 +361,8 @@ IOReturn GiMATEECClient::externalMethod(uint32_t selector, IOExternalMethodArgum
                                         IOExternalMethodDispatch *dispatch,
                                         OSObject *target, void *reference)
 {
-    static const IOExternalMethodDispatch methods[2] = {
-        { (IOExternalMethodAction) &GiMATEECClient::sSetChargeLimit, 1, 0, 0, 0 },
-        { (IOExternalMethodAction) &GiMATEECClient::sSetFanMode,     1, 0, 0, 0 },
+    static const IOExternalMethodDispatch methods[1] = {
+        { (IOExternalMethodAction) &GiMATEECClient::sSet, 2, 0, 0, 0 },
     };
 
     if (selector >= (sizeof(methods) / sizeof(methods[0]))) {

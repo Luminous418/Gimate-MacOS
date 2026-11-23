@@ -46,7 +46,7 @@ GiMATEEC.kext     maps the EC window       ← only if read/write of the EC is n
 |---|---|---|
 | **1. MVP** | Menu-bar app: keyboard RGB, MUX status, EC sensors (`RPM1/RPM2`, `CTMP`) | ✅ working |
 | 2. Charge limit | 60 / 80 / 100 % (BCPC + BCPS bit 2) | ✅ register write verified |
-| 3. Fan profile | Silent / Gaming / Auto (`CRAF`, `FANB`, `GFAN`) | ✅ implemented, pending on-hardware test |
+| 3. Fan profile | Normal / Silent / Gaming / Auto (`CRAF`, `FANB`, `GFAN`) | ✅ verified on hardware (0 → 1840 rpm in gaming) |
 | 4. LEDs / extras | chassis LEDs, keyboard brightness | pending |
 | 5. Manual fan curve | — | **not planned: too risky** |
 
@@ -87,6 +87,15 @@ research/  reverse-engineering notes (app IL, drivers zip, EC map)
   from the CLI and from the app.
 - End-to-end charging behaviour at 60 % (battery actually stopping there) still to be
   observed with a discharged battery.
+
+## Verified on hardware (23/11/2026) — fan modes
+
+| Mode | `Flags` bits | Observed |
+|---|---|---|
+| Normal | `0x00` | fans ramp down to 0 rpm |
+| Silent | `0x04` (`CRAF`) | fans off at ~47 °C |
+| Gaming | `0x08` (`FANB`) | **0 → 1840/2083 rpm** in ~20 s |
+| Auto | `0x02` (`GFAN`) | fans follow temperature |
 
 ## Dependencies
 

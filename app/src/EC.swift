@@ -47,8 +47,8 @@ enum EC {
         guard IOServiceOpen(svc, mach_task_self_, 0, &conn) == KERN_SUCCESS else { return false }
         defer { IOServiceClose(conn) }
 
-        var input = UInt64(pct)
-        let kr = IOConnectCallScalarMethod(conn, 0, &input, 1, nil, nil)
+        var input: [UInt64] = [0, UInt64(pct)]
+        let kr = IOConnectCallScalarMethod(conn, 0, &input, 2, nil, nil)
         return kr == KERN_SUCCESS
     }
 
@@ -62,8 +62,8 @@ enum EC {
         guard IOServiceOpen(svc, mach_task_self_, 0, &conn) == KERN_SUCCESS else { return false }
         defer { IOServiceClose(conn) }
 
-        var input = UInt64(mode)
-        return IOConnectCallScalarMethod(conn, 1, &input, 1, nil, nil) == KERN_SUCCESS
+        var input: [UInt64] = [1, UInt64(mode)]
+        return IOConnectCallScalarMethod(conn, 0, &input, 2, nil, nil) == KERN_SUCCESS
     }
 
     /// True when the internal panel is driven by the NVIDIA GPU (MUX = Discrete).

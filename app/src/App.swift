@@ -88,6 +88,7 @@ struct ContentView: View {
 
             GroupBox("Fan") {
                 Picker("", selection: $fanMode) {
+                    Text("Normal").tag(0)
                     Text("Silent").tag(1)
                     Text("Gaming").tag(2)
                     Text("Auto").tag(3)
@@ -213,7 +214,7 @@ struct ContentView: View {
         discrete = EC.panelOnDiscrete()
         if let s = snap, s.mapped {
             if chargeLimit != s.bcpc { chargeLimit = s.bcpc }
-            if s.fanMode != 0 && fanMode != s.fanMode { fanMode = s.fanMode }
+            if fanMode != s.fanMode { fanMode = s.fanMode }
         }
     }
 
