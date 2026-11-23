@@ -1,0 +1,6 @@
+ProductName:		macOS
+ProductVersion:		26.7.3
+BuildVersion:		25G342
+Darwin pc118-10.14004580.14.andared.ced.junta-andalucia.es 25.6.0 Darwin Kernel Version 25.6.0: Mon Oct 12 00:33:09 PDT 2026; root:xnu-12377.161.15.701.48~2/RELEASE_X86_64 x86_64
+MacBookPro16,2
+13th Gen Intel(R) Core(TM) i7-13620H

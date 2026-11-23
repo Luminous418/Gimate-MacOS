@@ -1,0 +1,11 @@
+"ACPI" = 
+"apst" = 
+"Base" = 
+"Leaf" = 
+"name" = 
+"Name" = 
+"Open" = 
+"port" = 
+"Role" = 
+"Size" = 
+"UUID" = 

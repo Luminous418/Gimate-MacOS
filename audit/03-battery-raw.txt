@@ -1,0 +1,54 @@
++-o AppleSmartBattery  <class AppleSmartBattery, id 0x100000427, registered, matched, active, busy 0 (0 ms), retain 6>
+    {
+      "TimeRemaining" = 60120
+      "AvgTimeToEmpty" = 36672
+      "AdapterDetails" = {"Watts"=60,"SerialNumber"=4537534,"AdapterID"=256,"AdapterRevision"=0,"FamilyCode"=186}
+      "AppleRawCurrentCapacity" = 3888
+      "InstantTimeToEmpty" = 36672
+      "AppleRawMaxCapacity" = 4890
+      "ExternalChargeCapable" = Yes
+      "FullPathUpdated" = 1795433168
+      "Voltage" = 16953
+      "PermanentFailureStatus" = 0
+      "BatteryInvalidWakeSeconds" = 30
+      "AdapterInfo" = 0
+      "MaxCapacity" = 4890
+      "DesignCycleCount70" = 0
+      "UpdateTime" = 1795433288
+      "Manufacturer" = "COSMX40"
+      "AppleRawAdapterDetails" = ({"Watts"=60,"SerialNumber"=4537534,"AdapterID"=256,"AdapterRevision"=0,"FamilyCode"=186})
+      "Location" = 0
+      "CurrentCapacity" = 3888
+      "LegacyBatteryInfo" = {"Amperage"=0,"Flags"=7,"Capacity"=4890,"Current"=3888,"Voltage"=16953,"Cycle Count"=55}
+      "BatteryInstalled" = Yes
+      "FirmwareSerialNumber" = 0
+      "CycleCount" = 55
+      "PackReserve" = 1000
+      "AvgTimeToFull" = 60120
+      "BatteryData" = {"StateOfCharge"=79,"CellVoltage"=(16000),"Serial"="4503","DesignCapacity"=4890,"CycleCount"=55,"Voltage"=16954,"LifetimeData"={"UpdateTime"=1795433288}}
+      "OperationStatus" = 0
+      "ChargerData" = {"ChargingVoltage"=8000,"ChargingCurrent"=0}
+      "BestAdapterIndex" = 0
+      "DesignCapacity" = 4890
+      "BootPathUpdated" = 1795431968
+      "SkipperNEIgnoreAtCritical" = No
+      "PostDischargeWaitSeconds" = 120
+      "Serial" = "4503"
+      "Temperature" = 2931
+      "UserVisiblePathUpdated" = 1795433288
+      "IOReportLegendPublic" = Yes
+      "InstantAmperage" = 0
+      "ManufacturerData" = <00000000000000000000>
+      "FullyCharged" = No
+      "MaxErr" = 0
+      "DeviceName" = "GAD-640"
+      "IOGeneralInterest" = "IOCommand is not serializable"
+      "IOReportLegend" = ({"IOReportChannels"=((7167869599145487988,6460407809,"BatteryCycleCount")),"IOReportGroupName"="Battery","IOReportChannelInfo"={"IOReportChannelUnit"=0}})
+      "Amperage" = 0
+      "IsCharging" = Yes
+      "DesignCycleCount9C" = 1000
+      "PostChargeWaitSeconds" = 120
+      "ExternalConnected" = Yes
+    }
+    
+

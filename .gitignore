@@ -1,0 +1,7 @@
+*.o
+kext/GiMATEEC.kext/
+app/GiMATE.app/
+tools/gmec
+research/gigabyte-laptop-wmi/
+.DS_Store
+audit/smc_probe

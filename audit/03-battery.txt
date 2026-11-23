@@ -1,0 +1,15 @@
+      "AppleRawCurrentCapacity" = 3888
+      "AppleRawMaxCapacity" = 4890
+      "Voltage" = 16953
+      "MaxCapacity" = 4890
+      "CurrentCapacity" = 3888
+      "LegacyBatteryInfo" = {"Amperage"=0,"Flags"=7,"Capacity"=4890,"Current"=3888,"Voltage"=16953,"Cycle Count"=55}
+      "CycleCount" = 55
+      "BatteryData" = {"StateOfCharge"=79,"CellVoltage"=(16000),"Serial"="4503","DesignCapacity"=4890,"CycleCount"=55,"Voltage"=16954,"LifetimeData"={"UpdateTime"=1795433288}}
+      "ChargerData" = {"ChargingVoltage"=8000,"ChargingCurrent"=0}
+      "DesignCapacity" = 4890
+      "Temperature" = 2931
+      "FullyCharged" = No
+      "Amperage" = 0
+      "IsCharging" = Yes
+      "ExternalConnected" = Yes

@@ -1,0 +1,109 @@
+nvrm_xnu: CPU mappings share hub connections (NVRM_ONE_CONN_PER_MAP=unset, kext token maps yes)
+2026-11-23 12:28:28.301 system_profiler[1821:22853] Device PreExisted [0000000100000688] NVIDIA GeForce RTX 5050 Laptop GPU (NVMTL over NVIDIA GeForce RTX 5050 Laptop GPU (NVK GB207-A))
+2026-11-23 12:28:28.301 system_profiler[1821:22853] Synchronize with Metal initialization
+2026-11-23 12:28:31.304 system_profiler[1821:22853] Can't find (Metal) name, location, locationNumber, maxTransferRate
+2026-11-23 12:28:31.329 system_profiler[1821:22853] Synchronize with Metal initialization
+2026-11-23 12:28:34.331 system_profiler[1821:22853] Can't find (Metal) name, location, locationNumber, maxTransferRate
+Hardware:
+
+    Hardware Overview:
+
+      Model Name: MacBook Pro
+      Model Identifier: MacBookPro16,2
+      Processor Name: 13th Gen Intel(R) Core(TM) i7-13620H
+      Processor Speed: 2,92 GHz
+      Number of Processors: 1
+      Total Number of Cores: 6
+      L2 Cache (per Core): 1,3 MB
+      L3 Cache: 24 MB
+      Hyper-Threading Technology: Enabled
+      Memory: 16 GB
+      System Firmware Version: 2094.80.5.0.0
+      OS Loader Version: 583~6005
+      Serial Number (system): C02CV0LQML7H
+      Hardware UUID: 7A68759A-8E6E-5B3F-B627-F217685A3EB4
+      Provisioning UDID: 7A68759A-8E6E-5B3F-B627-F217685A3EB4
+
+Power:
+
+    Battery Information:
+
+      Model Information:
+          Serial Number: 4503
+          Manufacturer: COSMX40
+          Device Name: GAD-640
+          Pack Lot Code: 0
+          PCB Lot Code: 0
+          Firmware Version: 0
+          Hardware Revision: 0
+          Cell Revision: 0
+      Charge Information:
+          The battery’s charge is below the warning level: No
+          Fully Charged: No
+          Charging: Yes
+          Full Charge Capacity (mAh): 4890
+          State of Charge (%): 83
+      Health Information:
+          Cycle Count: 55
+          Condition: Normal
+
+    System Power Settings:
+
+      AC Power:
+          System Sleep Timer (Minutes): 0
+          Disk Sleep Timer (Minutes): 10
+          Display Sleep Timer (Minutes): 0
+          Wake on LAN: Yes
+          Current Power Source: Yes
+          Display Sleep Uses Dim: Yes
+          Hibernate Mode: 3
+          Low Power Mode: No
+          Prioritize Network Reachability Over Sleep: No
+      Battery Power:
+          System Sleep Timer (Minutes): 0
+          Disk Sleep Timer (Minutes): 10
+          Display Sleep Timer (Minutes): 0
+          Display Sleep Uses Dim: Yes
+          Hibernate Mode: 3
+          Low Power Mode: No
+          Reduce Brightness: No
+
+    Hardware Configuration:
+
+      UPS Installed: No
+
+    AC Charger Information:
+
+      Connected: Yes
+      ID: 0x0100
+      Wattage (W): 60
+      Revision: 0x0000
+      Family: 0x00ba
+      Serial Number: 0x00453cbe
+      Charging: Yes
+
+Graphics/Displays:
+
+    NVIDIA GeForce RTX 5050 Laptop GPU:
+
+      Chipset Model: NVIDIA GeForce RTX 5050 Laptop GPU
+      Type: GPU
+      Bus: PCIe
+      Slot: Slot-1
+      PCIe Lane Width: x8
+      VRAM (Total): 8 GB
+      Vendor: NVIDIA (0x10de)
+      Device ID: 0x2d98
+      Revision ID: 0x00a1
+      Metal Support: Metal 4
+      Displays:
+        Display:
+          Resolution: 1920 x 1200 (WUXGA - Widescreen Ultra eXtended Graphics Array)
+          UI Looks like: 1920 x 1200 @ 165.00Hz
+          Framebuffer Depth: 24-Bit Color (ARGB8888)
+          Main Display: Yes
+          Mirror: Off
+          Online: Yes
+          Automatically Adjust Brightness: No
+          Connection Type: Internal
+

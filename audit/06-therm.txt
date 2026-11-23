@@ -1,0 +1,43 @@
+Note: No thermal warning level has been recorded
+Note: No performance warning level has been recorded
+2026-11-23 12:28:47 +0100 CPU Power notify
+	CPU_Scheduler_Limit 	= 100
+	CPU_Available_CPUs 	= 16
+	CPU_Speed_Limit 	= 100
+Note: No thermal warning level has been recorded
+Note: No performance warning level has been recorded
+2026-11-23 12:28:47 +0100 Battery Power:
+ standbydelayhigh     86400
+ lowpowermode         0
+ standbydelaylow      10800
+ standby              0
+ proximitywake        0
+ ttyskeepawake        1
+ hibernatemode        3
+ powernap             0
+ highstandbythreshold 50
+ hibernatefile        /var/vm/sleepimage
+ displaysleep         0
+ sleep                0
+ tcpkeepalive         1
+ halfdim              1
+ lessbright           0
+ disksleep            10
+AC Power:
+ lowpowermode         0
+ standbydelayhigh     86400
+ standbydelaylow      10800
+ standby              0
+ proximitywake        1
+ ttyskeepawake        1
+ hibernatemode        3
+ powernap             0
+ highstandbythreshold 50
+ hibernatefile        /var/vm/sleepimage
+ displaysleep         0
+ womp                 1
+ networkoversleep     0
+ sleep                0
+ tcpkeepalive         1
+ halfdim              1
+ disksleep            10
