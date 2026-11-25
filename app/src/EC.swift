@@ -1,22 +1,21 @@
 import Foundation
 import IOKit
+import IOKit.ps
 
 /// Battery information published by macOS (AppleSmartBattery). Read-only.
 struct BatteryInfo {
     var cycles = 0
     var design = 0
     var maxCapacity = 0
-    var current = 0
+    /// Percentage exactly as macOS shows it (smoothed by AppleSmartBatteryManager).
+    var percent = 0
     var charging = false
 
     var healthPercent: Int {
         guard design > 0 else { return 0 }
         return Int((Double(maxCapacity) / Double(design) * 100).rounded())
     }
-    var chargePercent: Int {
-        guard maxCapacity > 0 else { return 0 }
-        return Int((Double(current) / Double(maxCapacity) * 100).rounded())
-    }
+    var chargePercent: Int { percent }
 }
 
 /// Reads the snapshot published by GiMATEEC.kext (IORegistry properties).
@@ -47,10 +46,21 @@ enum EC {
         b.cycles = i("CycleCount")
         b.design = i("DesignCapacity")
         b.maxCapacity = i("MaxCapacity")
-        b.current = i("CurrentCapacity")
-        b.charging = (dict["IsCharging"] as? Bool) ?? false
         if b.maxCapacity == 0 { b.maxCapacity = i("AppleRawMaxCapacity") }
-        if b.current == 0 { b.current = i("AppleRawCurrentCapacity") }
+
+        // Percentage and charging state from the power-sources API, which is
+        // what the menu bar and pmset show (the fuel-gauge ratio can differ
+        // by a few points).
+        if let blob = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+           let list = IOPSCopyPowerSourcesList(blob)?.takeRetainedValue() as? [CFTypeRef] {
+            for ps in list {
+                guard let d = IOPSGetPowerSourceDescription(blob, ps)?.takeUnretainedValue() as? [String: Any],
+                      (d[kIOPSTypeKey] as? String) == kIOPSInternalBatteryType else { continue }
+                b.percent = d[kIOPSCurrentCapacityKey] as? Int ?? 0
+                b.charging = d[kIOPSIsChargingKey] as? Bool ?? false
+                break
+            }
+        }
         return b
     }
 
