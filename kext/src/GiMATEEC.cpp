@@ -86,6 +86,18 @@ OSDefineMetaClassAndStructors(GiMATEECClient, IOUserClient)
 /* EC access                                                          */
 /* ------------------------------------------------------------------ */
 
+static inline UInt8 inbPort(UInt16 port)
+{
+    UInt8 v;
+    __asm__ volatile ("inb %1, %0" : "=a" (v) : "Nd" (port));
+    return v;
+}
+
+static inline void outbPort(UInt16 port, UInt8 v)
+{
+    __asm__ volatile ("outb %0, %1" :: "a" (v), "Nd" (port));
+}
+
 UInt8 GiMATEEC::read8(UInt32 off)
 {
     volatile UInt8 *b = ecMap ? (volatile UInt8 *) ecMap->getVirtualAddress() : NULL;
@@ -146,6 +158,13 @@ void GiMATEEC::refresh()
         fanMode = 1;                       /* CRAF = silent */
     }
     setProperty("FanMode", (UInt32) fanMode, 32);
+
+    /* Display MUX: extended CMOS index 0xD0 (ports 0x72/0x73).
+     * 0 = MSHybrid (panel on the iGPU), 1 = Discrete (panel on the dGPU). */
+    outbPort(0x72, 0xD0);
+    UInt8 muxRaw = inbPort(0x73);
+    setProperty("MuxRaw", (UInt32) muxRaw, 32);
+    setProperty("MuxState", (UInt32) (muxRaw & 0x01), 32);
 }
 
 void GiMATEEC::timerFired()

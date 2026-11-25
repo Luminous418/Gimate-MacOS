@@ -25,10 +25,12 @@ static int printSnapshot(io_service_t svc)
     int bcps = GETI("BCPS"), bcpc = GETI("BCPC");
     int fanmode = GETI("FanMode");
     int flags = GETI("Flags");
+    int mux = GETI("MuxState"), muxraw = GETI("MuxRaw");
     int lastOp = GETI("LastOp"), lastVal = GETI("LastValue"), lastRes = GETI("LastResult");
 #undef GETI
 
-    printf("FanMode %d | last=%d/%d/%d | ", fanmode, lastOp, lastVal, lastRes);
+    printf("Mux %s (raw 0x%02X) | FanMode %d | last=%d/%d/%d | ",
+           mux == 1 ? "Discrete" : (mux == 0 ? "MSHybrid" : "?"), muxraw, fanmode, lastOp, lastVal, lastRes);
     printf("EC %s | CPU %d.%02d C | fan1 %4d rpm (%d%%) | fan2 %4d rpm (%d%%) | FLVL %d | KBLL %d | BCPS %d BCPC %d | flags 0x%x\n",
            mapped ? "ok  " : "FAIL", ctmp, ctml, rpm1, fan1, rpm2, fan2, flvl, kbll, bcps, bcpc, flags);
 

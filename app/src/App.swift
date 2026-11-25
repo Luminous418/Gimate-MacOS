@@ -66,7 +66,7 @@ struct ContentView: View {
             HStack {
                 Text("Gigabyte Gaming A16").font(.headline)
                 Spacer()
-                Text(discrete ? "Discrete" : "Hybrid")
+                Text(discrete ? "Discrete" : "MSHybrid")
                     .font(.caption.weight(.semibold))
                     .padding(.horizontal, 7).padding(.vertical, 2)
                     .background(discrete ? Color.green.opacity(0.25) : Color.orange.opacity(0.25))

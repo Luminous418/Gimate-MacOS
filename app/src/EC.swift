@@ -10,6 +10,7 @@ struct ECSnapshot {
     var ctmp = 0, ctml = 0
     var bcps = 0, bcpc = 0
     var fanMode = 0
+    var muxState = -1
     var flags = 0
 }
 
@@ -33,6 +34,7 @@ enum EC {
         s.ctmp = i("CTMP"); s.ctml = i("CTML")
         s.bcps = i("BCPS"); s.bcpc = i("BCPC")
         s.fanMode = i("FanMode")
+        s.muxState = (dict["MuxState"] != nil) ? i("MuxState") : -1
         s.flags = i("Flags")
         return s
     }
@@ -66,11 +68,26 @@ enum EC {
         return IOConnectCallScalarMethod(conn, 0, &input, 2, nil, nil) == KERN_SUCCESS
     }
 
-    /// True when the internal panel is driven by the NVIDIA GPU (MUX = Discrete).
+    /// True when the panel is on the NVIDIA GPU (MUX = Discrete).
+    ///
+    /// Preferred source is the EC (CMOS 0xD0): 0 = MSHybrid, 1 = Discrete.
+    /// Without GiMATEEC, fall back to which driver owns the internal panel:
+    /// with the Intel framebuffer present the panel is on the iGPU.
     static func panelOnDiscrete() -> Bool {
-        let svc = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("NVRMDisplay"))
-        guard svc != 0 else { return false }
-        IOObjectRelease(svc)
+        if let snaps = read(), snaps.muxState >= 0 {
+            return snaps.muxState == 1
+        }
+
+        let intel = IOServiceGetMatchingService(kIOMainPortDefault,
+                                                IOServiceMatching("AppleIntelFramebuffer"))
+        if intel != 0 {
+            IOObjectRelease(intel)
+            return false
+        }
+
+        let nv = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("NVRMDisplay"))
+        guard nv != 0 else { return false }
+        IOObjectRelease(nv)
         return true
     }
 }
