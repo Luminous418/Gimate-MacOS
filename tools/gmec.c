@@ -25,12 +25,12 @@ static int printSnapshot(io_service_t svc)
     int bcps = GETI("BCPS"), bcpc = GETI("BCPC");
     int fanmode = GETI("FanMode");
     int flags = GETI("Flags");
-    int mux = GETI("MuxState"), muxraw = GETI("MuxRaw");
+    int mux = GETI("MuxState"), muxraw = GETI("MuxRaw"), leds = GETI("LedState");
     int lastOp = GETI("LastOp"), lastVal = GETI("LastValue"), lastRes = GETI("LastResult");
 #undef GETI
 
-    printf("Mux %s (raw 0x%02X) | FanMode %d | last=%d/%d/%d | ",
-           mux == 1 ? "Discrete" : (mux == 0 ? "MSHybrid" : "?"), muxraw, fanmode, lastOp, lastVal, lastRes);
+    printf("Leds %d | Mux %s (raw 0x%02X) | FanMode %d | last=%d/%d/%d | ",
+           leds, mux == 1 ? "Discrete" : (mux == 0 ? "MSHybrid" : "?"), muxraw, fanmode, lastOp, lastVal, lastRes);
     printf("EC %s | CPU %d.%02d C | fan1 %4d rpm (%d%%) | fan2 %4d rpm (%d%%) | FLVL %d | KBLL %d | BCPS %d BCPC %d | flags 0x%x\n",
            mapped ? "ok  " : "FAIL", ctmp, ctml, rpm1, fan1, rpm2, fan2, flvl, kbll, bcps, bcpc, flags);
 
@@ -55,6 +55,10 @@ int main(int argc, char **argv)
     if (argc > 2 && strcmp(argv[1], "charge") == 0) {
         setCharge = atoi(argv[2]);
     }
+    int setLeds = -1;
+    if (argc > 2 && strcmp(argv[1], "led") == 0) {
+        setLeds = atoi(argv[2]);
+    }
     int setFan = -1;
     if (argc > 2 && strcmp(argv[1], "fan") == 0) {
         if (strcmp(argv[2], "normal") == 0) setFan = 0;
@@ -70,7 +74,7 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    if (setCharge >= 0 || setFan >= 0) {
+    if (setCharge >= 0 || setFan >= 0 || setLeds >= 0) {
         io_connect_t conn = 0;
         kern_return_t kr = IOServiceOpen(svc, mach_task_self(), 0, &conn);
         if (kr != KERN_SUCCESS) {
@@ -79,8 +83,8 @@ int main(int argc, char **argv)
             return 3;
         }
         uint64_t in[2];
-        in[0] = (setCharge >= 0) ? 0 : 1;
-        in[1] = (setCharge >= 0) ? (uint64_t) setCharge : (uint64_t) setFan;
+        if (setLeds >= 0) { in[0] = 2; in[1] = (uint64_t) setLeds; }
+        else { in[0] = (setCharge >= 0) ? 0 : 1; in[1] = (setCharge >= 0) ? (uint64_t) setCharge : (uint64_t) setFan; }
         kr = IOConnectCallScalarMethod(conn, 0, in, 2, NULL, NULL);
         IOServiceClose(conn);
         if (kr != KERN_SUCCESS) {

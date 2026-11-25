@@ -28,6 +28,7 @@ struct ECSnapshot {
     var bcps = 0, bcpc = 0
     var fanMode = 0
     var muxState = -1
+    var ledState = -1
     var flags = 0
 }
 
@@ -84,6 +85,7 @@ enum EC {
         s.bcps = i("BCPS"); s.bcpc = i("BCPC")
         s.fanMode = i("FanMode")
         s.muxState = (dict["MuxState"] != nil) ? i("MuxState") : -1
+        s.ledState = (dict["LedState"] != nil) ? i("LedState") : -1
         s.flags = i("Flags")
         return s
     }
@@ -114,6 +116,20 @@ enum EC {
         defer { IOServiceClose(conn) }
 
         var input: [UInt64] = [1, UInt64(mode)]
+        return IOConnectCallScalarMethod(conn, 0, &input, 2, nil, nil) == KERN_SUCCESS
+    }
+
+    /// Chassis LEDs: bit 0 = battery LED, bit 1 = power LED.
+    static func setLeds(_ mask: Int) -> Bool {
+        let svc = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("GiMATEEC"))
+        guard svc != 0 else { return false }
+        defer { IOObjectRelease(svc) }
+
+        var conn: io_connect_t = 0
+        guard IOServiceOpen(svc, mach_task_self_, 0, &conn) == KERN_SUCCESS else { return false }
+        defer { IOServiceClose(conn) }
+
+        var input: [UInt64] = [2, UInt64(mask)]
         return IOConnectCallScalarMethod(conn, 0, &input, 2, nil, nil) == KERN_SUCCESS
     }
 

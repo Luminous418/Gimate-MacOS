@@ -77,6 +77,7 @@ public:
 
     bool setChargeLimit(int pct);
     bool setFanMode(int mode);
+    bool setLeds(int mask);
 };
 
 OSDefineMetaClassAndStructors(GiMATEEC, IOService)
@@ -165,6 +166,13 @@ void GiMATEEC::refresh()
     UInt8 muxRaw = inbPort(0x73);
     setProperty("MuxRaw", (UInt32) muxRaw, 32);
     setProperty("MuxState", (UInt32) (muxRaw & 0x01), 32);
+
+    /* Chassis LEDs: 0xFE0B0807 bit 5 = BLED (battery), bit 7 = PLED (power). */
+    UInt8 ledByte = read8(0x07);
+    UInt32 leds = 0;
+    if (ledByte & 0x20) leds |= 1u;   /* BLED */
+    if (ledByte & 0x80) leds |= 2u;   /* PLED */
+    setProperty("LedState", leds, 32);
 }
 
 void GiMATEEC::timerFired()
@@ -233,6 +241,20 @@ bool GiMATEEC::setFanMode(int mode)
 
     IOLog("GiMATEEC: fan mode -> %d (0B=0x%02X 0C=0x%02X 2C=0x%02X)\n",
           mode, read8(0x0B), read8(0x0C), read8(0x2C));
+    refresh();
+    return true;
+}
+
+bool GiMATEEC::setLeds(int mask)
+{
+    if (!ecMap) {
+        return false;
+    }
+    UInt8 v = read8(0x07);
+    v = (mask & 1) ? (UInt8) (v | 0x20) : (UInt8) (v & ~0x20);
+    v = (mask & 2) ? (UInt8) (v | 0x80) : (UInt8) (v & ~0x80);
+    write8(0x07, v);
+    IOLog("GiMATEEC: leds -> 0x%02X (byte 0x%02X)\n", mask, read8(0x07));
     refresh();
     return true;
 }
@@ -367,6 +389,8 @@ IOReturn GiMATEECClient::sSet(OSObject *target, void *ref,
         ok = self->owner->setChargeLimit(value);
     } else if (op == 1) {
         ok = self->owner->setFanMode(value);
+    } else if (op == 2) {
+        ok = self->owner->setLeds(value);
     }
 
     self->owner->setProperty("LastOp", (UInt32) op, 32);

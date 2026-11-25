@@ -8,9 +8,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             let fan = UserDefaults.standard.integer(forKey: "fanModePref")
             let charge = UserDefaults.standard.object(forKey: "chargePref") as? Int ?? 80
+            let bled = UserDefaults.standard.object(forKey: "batteryLedPref") as? Bool ?? true
+            let pled = UserDefaults.standard.object(forKey: "powerLedPref") as? Bool ?? true
             guard let s = EC.read(), s.mapped else { return }
             if s.fanMode != fan { _ = EC.setFanMode(fan) }
             if s.bcpc != charge { _ = EC.setChargeLimit(charge) }
+            let mask = (bled ? 1 : 0) | (pled ? 2 : 0)
+            if s.ledState != mask { _ = EC.setLeds(mask) }
         }
     }
 }
@@ -63,6 +67,10 @@ struct ContentView: View {
     @AppStorage("fanModePref") private var fanPref = 0
     @AppStorage("chargePref") private var chargePref = 80
     @State private var battery: BatteryInfo?
+    @State private var batteryLed = true
+    @State private var powerLed = true
+    @AppStorage("batteryLedPref") private var batteryLedPref = true
+    @AppStorage("powerLedPref") private var powerLedPref = true
 
     private let presets: [(String, (UInt8, UInt8, UInt8))] = [
         ("Blanco",  (255, 255, 255)),
@@ -150,6 +158,20 @@ struct ContentView: View {
                     .font(.caption)
                 }
             }
+
+            GroupBox("Chassis LEDs") {
+                Toggle("Power LED", isOn: $powerLed)
+                    .onChange(of: powerLed) { _, v in
+                        powerLedPref = v
+                        applyLeds()
+                    }
+                Toggle("Battery LED", isOn: $batteryLed)
+                    .onChange(of: batteryLed) { _, v in
+                        batteryLedPref = v
+                        applyLeds()
+                    }
+            }
+            .font(.callout)
 
             GroupBox("Keyboard") {
                 VStack(alignment: .leading, spacing: 8) {
@@ -245,6 +267,11 @@ struct ContentView: View {
         chargeLimit = chargePref
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in refresh() }
+    }
+
+    private func applyLeds() {
+        let mask = (batteryLed ? 1 : 0) | (powerLed ? 2 : 0)
+        _ = EC.setLeds(mask)
     }
 
     private func refresh() {
