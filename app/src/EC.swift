@@ -1,6 +1,24 @@
 import Foundation
 import IOKit
 
+/// Battery information published by macOS (AppleSmartBattery). Read-only.
+struct BatteryInfo {
+    var cycles = 0
+    var design = 0
+    var maxCapacity = 0
+    var current = 0
+    var charging = false
+
+    var healthPercent: Int {
+        guard design > 0 else { return 0 }
+        return Int((Double(maxCapacity) / Double(design) * 100).rounded())
+    }
+    var chargePercent: Int {
+        guard maxCapacity > 0 else { return 0 }
+        return Int((Double(current) / Double(maxCapacity) * 100).rounded())
+    }
+}
+
 /// Reads the snapshot published by GiMATEEC.kext (IORegistry properties).
 struct ECSnapshot {
     var mapped = false
@@ -15,6 +33,27 @@ struct ECSnapshot {
 }
 
 enum EC {
+    static func battery() -> BatteryInfo? {
+        let svc = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"))
+        guard svc != 0 else { return nil }
+        defer { IOObjectRelease(svc) }
+
+        var props: Unmanaged<CFMutableDictionary>?
+        guard IORegistryEntryCreateCFProperties(svc, &props, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+              let dict = props?.takeRetainedValue() as? [String: Any] else { return nil }
+
+        func i(_ k: String) -> Int { (dict[k] as? NSNumber)?.intValue ?? 0 }
+        var b = BatteryInfo()
+        b.cycles = i("CycleCount")
+        b.design = i("DesignCapacity")
+        b.maxCapacity = i("MaxCapacity")
+        b.current = i("CurrentCapacity")
+        b.charging = (dict["IsCharging"] as? Bool) ?? false
+        if b.maxCapacity == 0 { b.maxCapacity = i("AppleRawMaxCapacity") }
+        if b.current == 0 { b.current = i("AppleRawCurrentCapacity") }
+        return b
+    }
+
     static func read() -> ECSnapshot? {
         let svc = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("GiMATEEC"))
         guard svc != 0 else { return nil }

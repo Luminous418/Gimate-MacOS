@@ -62,6 +62,7 @@ struct ContentView: View {
     @State private var fanMode = 3
     @AppStorage("fanModePref") private var fanPref = 0
     @AppStorage("chargePref") private var chargePref = 80
+    @State private var battery: BatteryInfo?
 
     private let presets: [(String, (UInt8, UInt8, UInt8))] = [
         ("Blanco",  (255, 255, 255)),
@@ -137,6 +138,17 @@ struct ContentView: View {
                     }
                 }
                 .font(.callout)
+
+                if let b = battery {
+                    HStack {
+                        Text("Health \(b.healthPercent) %").foregroundStyle(.secondary)
+                        Spacer()
+                        Text("\(b.cycles) cycles").foregroundStyle(.secondary)
+                        Spacer()
+                        Text("\(b.chargePercent) %\(b.charging ? " ⚡" : "")").monospacedDigit()
+                    }
+                    .font(.caption)
+                }
             }
 
             GroupBox("Keyboard") {
@@ -237,6 +249,7 @@ struct ContentView: View {
 
     private func refresh() {
         snap = EC.read()
+        battery = EC.battery()
         discrete = EC.panelOnDiscrete()
 
     }
