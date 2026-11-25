@@ -1,8 +1,24 @@
 import SwiftUI
 import AppKit
 
+/// Applies the saved fan mode / charge limit at login. The menu-bar panel is
+/// created lazily, so this cannot live in the view's onAppear.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            let fan = UserDefaults.standard.integer(forKey: "fanModePref")
+            let charge = UserDefaults.standard.object(forKey: "chargePref") as? Int ?? 80
+            guard let s = EC.read(), s.mapped else { return }
+            if s.fanMode != fan { _ = EC.setFanMode(fan) }
+            if s.bcpc != charge { _ = EC.setChargeLimit(charge) }
+        }
+    }
+}
+
 @main
 struct GiMATEApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
         MenuBarExtra("GiMATE", systemImage: "fanblades.fill") {
             ContentView()
@@ -44,6 +60,8 @@ struct ContentView: View {
     @State private var timer: Timer?
     @State private var chargeLimit = 80
     @State private var fanMode = 3
+    @AppStorage("fanModePref") private var fanPref = 0
+    @AppStorage("chargePref") private var chargePref = 80
 
     private let presets: [(String, (UInt8, UInt8, UInt8))] = [
         ("Blanco",  (255, 255, 255)),
@@ -95,7 +113,10 @@ struct ContentView: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)
-                .onChange(of: fanMode) { _, v in _ = EC.setFanMode(v) }
+                .onChange(of: fanMode) { _, v in
+                    fanPref = v
+                    _ = EC.setFanMode(v)
+                }
             }
 
             GroupBox("Battery") {
@@ -110,7 +131,10 @@ struct ContentView: View {
                     .labelsHidden()
                     .pickerStyle(.segmented)
                     .frame(width: 170)
-                    .onChange(of: chargeLimit) { _, v in _ = EC.setChargeLimit(v) }
+                    .onChange(of: chargeLimit) { _, v in
+                        chargePref = v
+                        _ = EC.setChargeLimit(v)
+                    }
                 }
                 .font(.callout)
             }
@@ -205,6 +229,8 @@ struct ContentView: View {
 
     private func start() {
         hasLamp = Keyboard.available
+        fanMode = fanPref
+        chargeLimit = chargePref
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in refresh() }
     }
@@ -212,10 +238,7 @@ struct ContentView: View {
     private func refresh() {
         snap = EC.read()
         discrete = EC.panelOnDiscrete()
-        if let s = snap, s.mapped {
-            if chargeLimit != s.bcpc { chargeLimit = s.bcpc }
-            if fanMode != s.fanMode { fanMode = s.fanMode }
-        }
+
     }
 
     private func openColorPanel() {
