@@ -167,11 +167,13 @@ void GiMATEEC::refresh()
     setProperty("MuxRaw", (UInt32) muxRaw, 32);
     setProperty("MuxState", (UInt32) (muxRaw & 0x01), 32);
 
-    /* Chassis LEDs: 0xFE0B0807 bit 5 = BLED (battery), bit 7 = PLED (power). */
+    /* Chassis LEDs: 0xFE0B0807 bit 5 = BLED (battery), bit 7 = PLED (power).
+     * The EC bits are "disabled" flags: 1 = LED off, 0 = LED on (confirmed on
+     * hardware: writing 1 turned the LED off). */
     UInt8 ledByte = read8(0x07);
     UInt32 leds = 0;
-    if (ledByte & 0x20) leds |= 1u;   /* BLED */
-    if (ledByte & 0x80) leds |= 2u;   /* PLED */
+    if ((ledByte & 0x20) == 0) leds |= 1u;   /* battery LED on */
+    if ((ledByte & 0x80) == 0) leds |= 2u;   /* power LED on */
     setProperty("LedState", leds, 32);
 }
 
@@ -250,9 +252,11 @@ bool GiMATEEC::setLeds(int mask)
     if (!ecMap) {
         return false;
     }
+    /* mask bit set = LED on. The EC bit is a "disabled" flag, so clear it to
+     * switch the LED on and set it to switch it off. */
     UInt8 v = read8(0x07);
-    v = (mask & 1) ? (UInt8) (v | 0x20) : (UInt8) (v & ~0x20);
-    v = (mask & 2) ? (UInt8) (v | 0x80) : (UInt8) (v & ~0x80);
+    v = (mask & 1) ? (UInt8) (v & ~0x20) : (UInt8) (v | 0x20);
+    v = (mask & 2) ? (UInt8) (v & ~0x80) : (UInt8) (v | 0x80);
     write8(0x07, v);
     IOLog("GiMATEEC: leds -> 0x%02X (byte 0x%02X)\n", mask, read8(0x07));
     refresh();
